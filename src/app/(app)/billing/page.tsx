@@ -86,16 +86,17 @@ export default function BillingPage() {
   }, [profile, updateProfile]);
 
   if (!profile) return null;
+  const account = profile;
 
-  const current = getPlan(profile.plan);
-  const projectUsage = usage("projects", projects.length, profile.plan);
-  const clientUsage = usage("clients", clients.length, profile.plan);
-  const invoiceUsage = usage("invoices", invoices.length, profile.plan);
-  const renews = formatRenewsAt(profile.planRenewsAt);
+  const current = getPlan(account.plan);
+  const projectUsage = usage("projects", projects.length, account.plan);
+  const clientUsage = usage("clients", clients.length, account.plan);
+  const invoiceUsage = usage("invoices", invoices.length, account.plan);
+  const renews = formatRenewsAt(account.planRenewsAt);
   const paddleOn = Boolean(paddle?.configured && paddle.clientToken);
   const paidLive = usingSupabase && (paddleOn || stripeOn);
   const processor = paddleOn ? "Paddle" : stripeOn ? "Stripe" : null;
-  const hasCustomer = Boolean(profile.paddleCustomerId || profile.stripeCustomerId);
+  const hasCustomer = Boolean(account.paddleCustomerId || account.stripeCustomerId);
 
   async function applyPaddlePatch(data: Partial<Profile>) {
     if (!data.plan) return;
@@ -119,8 +120,8 @@ export default function BillingPage() {
       token: paddle.clientToken,
       env: paddle.env === "production" ? "production" : "sandbox",
       priceId,
-      email: profile.email,
-      userId: profile.id,
+      email: account.email,
+      userId: account.id,
       plan,
       interval: nextInterval,
       async onComplete(transactionId) {
@@ -179,7 +180,7 @@ export default function BillingPage() {
   async function openPortal() {
     setBusy(true);
     try {
-      const path = profile.paddleCustomerId || paddleOn ? "/api/paddle/portal" : "/api/stripe/portal";
+      const path = account.paddleCustomerId || paddleOn ? "/api/paddle/portal" : "/api/stripe/portal";
       const res = await fetch(path, { method: "POST" });
       const data = await res.json();
       if (!res.ok || !data.url) throw new Error(data.error ?? "Could not open billing portal");
@@ -208,7 +209,7 @@ export default function BillingPage() {
   }
 
   function choose(plan: PlanId) {
-    if (plan === profile.plan && interval === profile.planInterval && profile.planStatus === "active") {
+    if (plan === account.plan && interval === account.planInterval && account.planStatus === "active") {
       toast("You’re already on this plan", "info");
       return;
     }
