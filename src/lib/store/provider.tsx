@@ -172,6 +172,13 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     let cancelled = false;
     (async () => {
       if (usingSupabase) {
+        if (typeof window !== "undefined") {
+          const params = new URLSearchParams(window.location.search);
+          if (params.get("code") && !window.location.pathname.startsWith("/auth/callback")) {
+            window.location.replace(`/auth/callback${window.location.search}`);
+            return;
+          }
+        }
         const supabase = createBrowserSupabase();
         const {
           data: { user: authUser },
