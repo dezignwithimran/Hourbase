@@ -16,7 +16,6 @@ export function GuestOnly({ children }: { children: React.ReactNode }) {
     if (!profile?.onboardingCompleted) router.replace("/onboarding");
     else router.replace("/dashboard");
   }, [ready, user, profile, router]);
-  if (!ready) return null;
   return <>{children}</>;
 }
 

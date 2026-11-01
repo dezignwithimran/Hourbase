@@ -180,36 +180,45 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
           }
         }
         const supabase = createBrowserSupabase();
-        const {
-          data: { user: authUser },
-        } = await supabase.auth.getUser();
-        if (authUser && !cancelled) {
-          const session = { id: authUser.id, email: authUser.email ?? "" };
-          setUser(session);
-          try {
-            const cloud = await loadCloudData(supabase, session.id);
-            const profile =
-              cloud.profile ??
-              defaultProfile(
-                session.id,
-                String(authUser.user_metadata?.name ?? ""),
-                session.email,
-              );
-            if (!cancelled) {
-              persist({
-                users: [],
-                profiles: [profile],
-                clients: cloud.clients,
-                projects: cloud.projects,
-                timeEntries: cloud.timeEntries,
-                invoices: cloud.invoices,
-              });
-              applyAppearance(profile.appearance);
+        try {
+          const {
+            data: { user: authUser },
+          } = await Promise.race([
+            supabase.auth.getUser(),
+            new Promise<never>((_, reject) => {
+              setTimeout(() => reject(new Error("auth-check-timeout")), 4000);
+            }),
+          ]);
+          if (authUser && !cancelled) {
+            const session = { id: authUser.id, email: authUser.email ?? "" };
+            setUser(session);
+            try {
+              const cloud = await loadCloudData(supabase, session.id);
+              const profile =
+                cloud.profile ??
+                defaultProfile(
+                  session.id,
+                  String(authUser.user_metadata?.name ?? ""),
+                  session.email,
+                );
+              if (!cancelled) {
+                persist({
+                  users: [],
+                  profiles: [profile],
+                  clients: cloud.clients,
+                  projects: cloud.projects,
+                  timeEntries: cloud.timeEntries,
+                  invoices: cloud.invoices,
+                });
+                applyAppearance(profile.appearance);
+              }
+            } catch (e) {
+              console.error(e);
+              toast("Could not load cloud data. Check your Supabase schema.", "error");
             }
-          } catch (e) {
-            console.error(e);
-            toast("Could not load cloud data. Check your Supabase schema.", "error");
           }
+        } catch (e) {
+          console.error(e);
         }
         if (!cancelled) setReady(true);
         return;
