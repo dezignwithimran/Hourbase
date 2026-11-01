@@ -111,10 +111,20 @@ create table if not exists public.invoice_items (
   amount numeric not null default 0
 );
 
+create table if not exists public.tasks (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references public.profiles (id) on delete cascade,
+  project_id uuid not null references public.projects (id) on delete cascade,
+  title text not null,
+  done boolean not null default false,
+  created_at timestamptz not null default now()
+);
+
 alter table public.profiles enable row level security;
 alter table public.clients enable row level security;
 alter table public.projects enable row level security;
 alter table public.time_entries enable row level security;
+alter table public.tasks enable row level security;
 alter table public.invoices enable row level security;
 alter table public.invoice_items enable row level security;
 
@@ -122,6 +132,8 @@ create policy "profiles_own" on public.profiles for all using (auth.uid() = id) 
 create policy "clients_own" on public.clients for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
 create policy "projects_own" on public.projects for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
 create policy "time_entries_own" on public.time_entries for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+drop policy if exists "tasks_own" on public.tasks;
+create policy "tasks_own" on public.tasks for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
 create policy "invoices_own" on public.invoices for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
 create policy "invoice_items_own" on public.invoice_items for all
   using (exists (select 1 from public.invoices i where i.id = invoice_id and i.user_id = auth.uid()))

@@ -25,7 +25,7 @@ import {
   YAxis,
 } from "recharts";
 
-const palette = ["#2563eb", "#4f46e5", "#7c3aed", "#0ea5e9", "#16a34a", "#f59e0b"];
+const palette = ["#165dfc", "#0f4ad4", "#38bdf8", "#0ea5e9", "#16a34a", "#f59e0b"];
 
 const tooltipStyle = {
   borderRadius: 12,
@@ -200,7 +200,7 @@ export default function ReportsPage() {
                     </p>
                   </div>
                   <div className="flex items-center gap-4 text-xs text-text-secondary">
-                    <Legend color="#2563eb" label="Billable" />
+                    <Legend color="#165dfc" label="Billable" />
                     <Legend color="var(--color-border-strong)" label="Non-billable" />
                   </div>
                 </div>
@@ -235,7 +235,7 @@ export default function ReportsPage() {
                       <Bar
                         dataKey="billable"
                         stackId="h"
-                        fill="#2563eb"
+                        fill="#165dfc"
                         maxBarSize={36}
                         radius={[0, 0, 0, 0]}
                       />

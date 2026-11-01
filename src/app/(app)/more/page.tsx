@@ -1,12 +1,13 @@
 "use client";
 
 import { PageHeader } from "@/components/ui/card";
-import { BarChart3, ChevronRight, FileText, HelpCircle, Settings, Sparkles, Users } from "@/components/ui/icons";
+import { BarChart3, Check, ChevronRight, FileText, HelpCircle, Settings, Sparkles, Users } from "@/components/ui/icons";
 import { ProBadge } from "@/components/ui/pro-badge";
 import Link from "next/link";
 
 const items = [
   { href: "/clients", label: "Clients", description: "Contacts, rates, and history", icon: Users },
+  { href: "/tasks", label: "Tasks", description: "Work assigned to a project", icon: Check },
   { href: "/team", label: "Team", description: "Collaborators · Pro", icon: Users, pro: true },
   { href: "/reports", label: "Reports", description: "Time, earnings, productivity", icon: BarChart3 },
   { href: "/invoices", label: "Invoices", description: "Bill your tracked hours", icon: FileText },

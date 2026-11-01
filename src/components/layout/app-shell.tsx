@@ -58,6 +58,7 @@ const navGroups = [
     label: "Manage",
     items: [
       { href: "/projects", label: "Projects", icon: FolderKanban },
+      { href: "/tasks", label: "Tasks", icon: Check },
       { href: "/clients", label: "Clients", icon: Users },
       { href: "/team", label: "Team", icon: Sparkles, pro: true },
     ],

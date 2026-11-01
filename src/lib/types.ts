@@ -84,6 +84,15 @@ export type Project = {
   createdAt: string;
 };
 
+export type Task = {
+  id: string;
+  userId: string;
+  projectId: string;
+  title: string;
+  done: boolean;
+  createdAt: string;
+};
+
 export type TimeEntry = {
   id: string;
   userId: string;

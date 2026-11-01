@@ -31,7 +31,7 @@ export function Logo({ inverse = false }) {
       )}
       aria-label="Hourbase home"
     >
-      <span className="relative flex size-8 items-center justify-center overflow-hidden rounded-[9px] bg-blue-600 shadow-sm shadow-blue-600/20">
+      <span className="relative flex size-8 items-center justify-center overflow-hidden rounded-[9px] bg-white shadow-sm ring-1 ring-slate-200">
         <svg
           viewBox="0 0 32 32"
           className="size-8"
@@ -40,13 +40,13 @@ export function Logo({ inverse = false }) {
         >
           <path
             d="M10.5 8.5v15M21.5 8.5v15M10.5 16h11"
-            stroke="white"
+            stroke="#165DFC"
             strokeWidth="2.4"
             strokeLinecap="round"
           />
           <path
             d="M24.5 5.5A13 13 0 0 1 28 16"
-            stroke="white"
+            stroke="#165DFC"
             strokeOpacity=".45"
             strokeWidth="1.5"
             strokeLinecap="round"

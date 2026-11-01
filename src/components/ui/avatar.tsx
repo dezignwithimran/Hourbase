@@ -50,23 +50,31 @@ export function BrandMark({ className }: { className?: string }) {
   return (
     <span
       className={cn(
-        "brand-gradient flex h-8 w-8 items-center justify-center rounded-2xl text-white",
+        "flex h-8 w-8 items-center justify-center overflow-hidden rounded-[9px] bg-white shadow-sm ring-1 ring-slate-200",
         className,
       )}
     >
-      <svg
-        viewBox="0 0 24 24"
-        className="h-4.5 w-4.5"
-        fill="none"
-        stroke="currentColor"
+      <HourbaseGlyph className="h-8 w-8" />
+    </span>
+  );
+}
+
+export function HourbaseGlyph({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 32 32" className={className} fill="none" aria-hidden>
+      <path
+        d="M10.5 8.5v15M21.5 8.5v15M10.5 16h11"
+        stroke="#165DFC"
         strokeWidth="2.4"
         strokeLinecap="round"
-        strokeLinejoin="round"
-        aria-hidden
-      >
-        <circle cx="12" cy="12" r="9" />
-        <path d="M12 7.5V12l3 1.8" />
-      </svg>
-    </span>
+      />
+      <path
+        d="M24.5 5.5A13 13 0 0 1 28 16"
+        stroke="#165DFC"
+        strokeOpacity="0.45"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+      />
+    </svg>
   );
 }

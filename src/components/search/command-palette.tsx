@@ -33,6 +33,7 @@ const pages: Result[] = [
   { href: "/time-tracker", label: "Time Tracker", kind: "Page" },
   { href: "/timesheets", label: "Timesheets", kind: "Page" },
   { href: "/projects", label: "Projects", kind: "Page" },
+  { href: "/tasks", label: "Tasks", kind: "Page" },
   { href: "/clients", label: "Clients", kind: "Page" },
   { href: "/reports", label: "Reports", kind: "Page" },
   { href: "/invoices", label: "Invoices", kind: "Page" },

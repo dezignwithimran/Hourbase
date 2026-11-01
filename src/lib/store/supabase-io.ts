@@ -1,6 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { normalizeProfile } from "@/lib/store/helpers";
-import type { Client, Invoice, InvoiceItem, Profile, Project, TimeEntry } from "@/lib/types";
+import type { Client, Invoice, InvoiceItem, Profile, Project, Task, TimeEntry } from "@/lib/types";
 
 function n(v: unknown): number {
   return Number(v ?? 0);
@@ -100,6 +100,17 @@ export function mapProject(row: Record<string, unknown>): Project {
   };
 }
 
+export function mapTask(row: Record<string, unknown>): Task {
+  return {
+    id: String(row.id),
+    userId: String(row.user_id),
+    projectId: String(row.project_id),
+    title: String(row.title ?? ""),
+    done: Boolean(row.done),
+    createdAt: String(row.created_at),
+  };
+}
+
 export function mapEntry(row: Record<string, unknown>): TimeEntry {
   return {
     id: String(row.id),
@@ -149,7 +160,7 @@ export function mapItem(row: Record<string, unknown>): InvoiceItem {
 }
 
 export async function loadCloudData(supabase: SupabaseClient, userId: string) {
-  const [profileRes, clientsRes, projectsRes, entriesRes, invoicesRes, itemsRes] =
+  const [profileRes, clientsRes, projectsRes, entriesRes, invoicesRes, itemsRes, tasksRes] =
     await Promise.all([
       supabase.from("profiles").select("*").eq("id", userId).maybeSingle(),
       supabase.from("clients").select("*").eq("user_id", userId).order("created_at", { ascending: false }),
@@ -157,15 +168,18 @@ export async function loadCloudData(supabase: SupabaseClient, userId: string) {
       supabase.from("time_entries").select("*").eq("user_id", userId).order("start_time", { ascending: false }),
       supabase.from("invoices").select("*").eq("user_id", userId).order("created_at", { ascending: false }),
       supabase.from("invoice_items").select("*"),
+      supabase.from("tasks").select("*").eq("user_id", userId).order("created_at", { ascending: false }),
     ]);
 
+  const tasksMissing = isMissingTable(tasksRes.error);
   const err =
     profileRes.error ||
     clientsRes.error ||
     projectsRes.error ||
     entriesRes.error ||
     invoicesRes.error ||
-    itemsRes.error;
+    itemsRes.error ||
+    (tasksRes.error && !tasksMissing ? tasksRes.error : null);
   if (err) throw err;
 
   const items = (itemsRes.data ?? []).map((r) => mapItem(r as Record<string, unknown>));
@@ -182,7 +196,16 @@ export async function loadCloudData(supabase: SupabaseClient, userId: string) {
     projects: (projectsRes.data ?? []).map((r) => mapProject(r as Record<string, unknown>)),
     timeEntries: (entriesRes.data ?? []).map((r) => mapEntry(r as Record<string, unknown>)),
     invoices,
+    tasks:
+      tasksRes.error || !tasksRes.data
+        ? []
+        : tasksRes.data.map((r) => mapTask(r as Record<string, unknown>)),
   };
+}
+
+function isMissingTable(error: { message?: string; code?: string } | null) {
+  if (!error) return false;
+  return /PGRST205|42P01|schema cache|does not exist/i.test(`${error.code ?? ""} ${error.message ?? ""}`);
 }
 
 export function clientRow(c: Client) {
@@ -213,6 +236,17 @@ export function projectRow(p: Project) {
     end_date: p.endDate || null,
     color: p.color,
     created_at: p.createdAt,
+  };
+}
+
+export function taskRow(t: Task) {
+  return {
+    id: t.id,
+    user_id: t.userId,
+    project_id: t.projectId,
+    title: t.title,
+    done: t.done,
+    created_at: t.createdAt,
   };
 }
 

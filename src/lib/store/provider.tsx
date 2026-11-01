@@ -24,6 +24,7 @@ import type {
   Project,
   ProjectStatus,
   SessionUser,
+  Task,
   TimeEntry,
 } from "@/lib/types";
 import {
@@ -54,6 +55,7 @@ import {
   loadCloudData,
   profileToRow,
   projectRow,
+  taskRow,
 } from "./supabase-io";
 import { applyAppearance } from "@/lib/appearance";
 import { toast } from "@/components/ui/toast";
@@ -84,6 +86,7 @@ type Store = {
   profile: Profile | null;
   clients: Client[];
   projects: Project[];
+  tasks: Task[];
   timeEntries: TimeEntry[];
   invoices: Invoice[];
   activeTimer: TimeEntry | null;
@@ -112,6 +115,9 @@ type Store = {
   updateProject: (id: string, patch: Partial<Project>) => Promise<void>;
   archiveProject: (id: string) => Promise<void>;
   deleteProject: (id: string) => Promise<void>;
+  createTask: (input: { title: string; projectId: string }) => Promise<Task>;
+  setTaskDone: (id: string, done: boolean) => Promise<void>;
+  deleteTask: (id: string) => Promise<void>;
   startTimer: (input: {
     projectId: string;
     description: string;
@@ -150,6 +156,7 @@ function userSlice(state: AppState, userId: string) {
     profile: profile ? normalizeProfile(profile) : null,
     clients: state.clients.filter((c) => c.userId === userId),
     projects: state.projects.filter((p) => p.userId === userId),
+    tasks: state.tasks.filter((t) => t.userId === userId),
     timeEntries: state.timeEntries.filter((e) => e.userId === userId),
     invoices: state.invoices.filter((i) => i.userId === userId),
   };
@@ -215,6 +222,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
                   profiles: [profile],
                   clients: cloud.clients,
                   projects: cloud.projects,
+                  tasks: cloud.tasks,
                   timeEntries: cloud.timeEntries,
                   invoices: cloud.invoices,
                 });
@@ -361,6 +369,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         profiles: [p],
         clients: cloud.clients,
         projects: cloud.projects,
+        tasks: cloud.tasks,
         timeEntries: cloud.timeEntries,
         invoices: cloud.invoices,
       });
@@ -475,7 +484,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
             status: "active",
             startDate: nowIso().slice(0, 10),
             endDate: "",
-            color: "#2563EB",
+            color: "#165DFC",
             createdAt: nowIso(),
           }
         : null;
@@ -538,6 +547,10 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       ...s,
       clients: s.clients.filter((c) => c.id !== id),
       projects: s.projects.filter((p) => p.clientId !== id),
+      tasks: s.tasks.filter((t) => {
+        const project = s.projects.find((p) => p.id === t.projectId);
+        return project ? project.clientId !== id : false;
+      }),
       timeEntries: s.timeEntries.filter((e) => e.clientId !== id),
       invoices: s.invoices.filter((i) => i.clientId !== id),
     }));
@@ -618,10 +631,54 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     persist((s) => ({
       ...s,
       projects: s.projects.filter((p) => p.id !== id),
+      tasks: s.tasks.filter((t) => t.projectId !== id),
       timeEntries: s.timeEntries.filter((e) => e.projectId !== id),
     }));
     if (usingSupabase) {
       const { error } = await sb().from("projects").delete().eq("id", id);
+      if (error) throw error;
+    }
+  };
+
+  const createTask = async (input: { title: string; projectId: string }) => {
+    const u = requireUser();
+    const title = input.title.trim();
+    if (!title) throw new Error("Enter a task name.");
+    const project = stateRef.current.projects.find(
+      (p) => p.id === input.projectId && p.userId === u.id,
+    );
+    if (!project) throw new Error("Select a project for this task.");
+    const task: Task = {
+      id: uid(),
+      userId: u.id,
+      projectId: project.id,
+      title,
+      done: false,
+      createdAt: nowIso(),
+    };
+    persist((s) => ({ ...s, tasks: [task, ...s.tasks] }));
+    if (usingSupabase) {
+      const { error } = await sb().from("tasks").insert(taskRow(task));
+      if (error) throw error;
+    }
+    return task;
+  };
+
+  const setTaskDone = async (id: string, done: boolean) => {
+    persist((s) => ({
+      ...s,
+      tasks: s.tasks.map((t) => (t.id === id ? { ...t, done } : t)),
+    }));
+    if (usingSupabase) {
+      const { error } = await sb().from("tasks").update({ done }).eq("id", id);
+      if (error) throw error;
+    }
+  };
+
+  const deleteTask = async (id: string) => {
+    persist((s) => ({ ...s, tasks: s.tasks.filter((t) => t.id !== id) }));
+    if (usingSupabase) {
+      const { error } = await sb().from("tasks").delete().eq("id", id);
       if (error) throw error;
     }
   };
@@ -848,6 +905,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       profiles: state.profiles.filter((x) => x.id !== u.id),
       clients: state.clients.filter((x) => x.userId !== u.id),
       projects: state.projects.filter((x) => x.userId !== u.id),
+      tasks: state.tasks.filter((x) => x.userId !== u.id),
       timeEntries: state.timeEntries.filter((x) => x.userId !== u.id),
       invoices: state.invoices.filter((x) => x.userId !== u.id),
     });
@@ -871,6 +929,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     profile,
     clients: slice.clients,
     projects: slice.projects,
+    tasks: slice.tasks,
     timeEntries: slice.timeEntries,
     invoices: slice.invoices,
     activeTimer,
@@ -889,6 +948,9 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     updateProject,
     archiveProject,
     deleteProject,
+    createTask,
+    setTaskDone,
+    deleteTask,
     startTimer,
     pauseTimer,
     resumeTimer,

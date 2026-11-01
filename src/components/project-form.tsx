@@ -8,7 +8,7 @@ import { useStore } from "@/lib/store/provider";
 import { toast } from "@/components/ui/toast";
 import { useEffect, useState } from "react";
 
-const colors = ["#2563EB", "#7C3AED", "#16A34A", "#F59E0B", "#DC2626", "#0EA5E9"];
+const colors = ["#165DFC", "#0F4AD4", "#16A34A", "#F59E0B", "#DC2626", "#0EA5E9"];
 const NEW_CLIENT = "__new__";
 
 export function CreateProjectModal({

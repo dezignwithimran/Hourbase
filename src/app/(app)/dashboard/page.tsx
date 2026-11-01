@@ -141,8 +141,8 @@ export default function DashboardPage() {
             <AreaChart data={chart} margin={{ top: 4, right: 4, left: -18, bottom: 0 }}>
               <defs>
                 <linearGradient id="activityFill" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#2563eb" stopOpacity={0.28} />
-                  <stop offset="100%" stopColor="#2563eb" stopOpacity={0} />
+                  <stop offset="0%" stopColor="#165dfc" stopOpacity={0.28} />
+                  <stop offset="100%" stopColor="#165dfc" stopOpacity={0} />
                 </linearGradient>
               </defs>
               <CartesianGrid strokeDasharray="4 4" vertical={false} stroke="var(--color-border)" />
@@ -177,10 +177,10 @@ export default function DashboardPage() {
               <Area
                 type="monotone"
                 dataKey={mode}
-                stroke="#2563eb"
+                stroke="#165dfc"
                 strokeWidth={2.5}
                 fill="url(#activityFill)"
-                dot={{ r: 3, fill: "#2563eb", strokeWidth: 0 }}
+                dot={{ r: 3, fill: "#165dfc", strokeWidth: 0 }}
                 activeDot={{ r: 5 }}
               />
             </AreaChart>

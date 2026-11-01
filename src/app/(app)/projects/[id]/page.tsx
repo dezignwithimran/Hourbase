@@ -1,6 +1,7 @@
 "use client";
 
 import { EntriesTable } from "@/components/entries-table";
+import { TasksPanel } from "@/components/tasks-panel";
 import { ProjectBadge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -22,7 +23,7 @@ import { useState } from "react";
 export default function ProjectDetailPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
-  const { projects, clients, timeEntries, updateProject, archiveProject, deleteProject, activeTimer, profile } =
+  const { projects, clients, tasks, timeEntries, updateProject, archiveProject, deleteProject, activeTimer, profile } =
     useStore();
   const project = projects.find((p) => p.id === id);
   const client = clients.find((c) => c.id === project?.clientId);
@@ -43,6 +44,7 @@ export default function ProjectDetailPage() {
 
   const stats = projectStats(project, timeEntries);
   const entries = timeEntries.filter((e) => e.projectId === project.id && e.status === "completed");
+  const projectTasks = tasks.filter((task) => task.projectId === project.id);
   const metrics = reportMetrics(entries);
 
   return (
@@ -115,6 +117,7 @@ export default function ProjectDetailPage() {
       <Tabs
         tabs={[
           { id: "overview", label: "Overview" },
+          { id: "tasks", label: `Tasks (${projectTasks.length})` },
           { id: "time", label: `Time entries (${entries.length})` },
           { id: "reports", label: "Reports" },
           { id: "settings", label: "Settings" },
@@ -147,6 +150,8 @@ export default function ProjectDetailPage() {
           </dl>
         </Card>
       )}
+
+      {tab === "tasks" && <TasksPanel projectId={project.id} />}
 
       {tab === "time" && <EntriesTable entries={entries} />}
 
@@ -214,7 +219,7 @@ export default function ProjectDetailPage() {
           <div className="border-t border-border pt-4">
             <p className="text-sm font-medium text-text">Delete project</p>
             <p className="mt-1 text-xs text-text-secondary">
-              Removes this project and every time entry on it. Invoices are not changed.
+              Removes this project, its tasks, and every time entry on it. Invoices are not changed.
             </p>
             <Button variant="outline" className="mt-3" onClick={() => setConfirm("delete")}>
               <Trash2 className="h-4 w-4 text-danger" /> Delete project

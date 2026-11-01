@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/toast";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
-import { BrandMark } from "@/components/ui/avatar";
+import { BrandMark, HourbaseGlyph } from "@/components/ui/avatar";
 import { BarChart3, Clock, FileText } from "@/components/ui/icons";
 
 export function GuestOnly({ children }: { children: React.ReactNode }) {
@@ -54,23 +54,15 @@ export function AuthCard({
         <div className="absolute right-1/4 top-1/3 h-64 w-64 rounded-full bg-indigo-300/20 blur-3xl" />
         <div className="absolute -bottom-36 -left-16 h-[26rem] w-[26rem] rounded-full bg-black/20 blur-3xl" />
 
-        <div className="relative flex items-center gap-2.5">
-          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/15 ring-1 ring-white/25 backdrop-blur">
-            <svg
-              viewBox="0 0 24 24"
-              className="h-4.5 w-4.5 text-white"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.4"
-              strokeLinecap="round"
-              aria-hidden
-            >
-              <circle cx="12" cy="12" r="9" />
-              <path d="M12 7.5V12l3 1.8" />
-            </svg>
+        <a
+          href="https://hourbase.vercel.app/"
+          className="relative flex w-fit items-center gap-2.5 rounded-xl outline-none transition hover:opacity-90 focus-visible:ring-2 focus-visible:ring-white/70"
+        >
+          <span className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-white/70">
+            <HourbaseGlyph className="h-9 w-9" />
           </span>
           <span className="font-semibold text-white">Hourbase</span>
-        </div>
+        </a>
 
         <div className="relative max-w-md">
           <h2 className="text-4xl leading-[1.1] font-semibold text-white">

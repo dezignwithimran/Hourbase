@@ -10,6 +10,7 @@ import type {
   Project,
   ProjectStatus,
   SessionUser,
+  Task,
   SupportTicket,
   TeamMember,
   TimeEntry,
@@ -29,6 +30,7 @@ export type AppState = {
   profiles: Profile[];
   clients: Client[];
   projects: Project[];
+  tasks: Task[];
   timeEntries: TimeEntry[];
   invoices: Invoice[];
 };
@@ -38,6 +40,7 @@ export const emptyState = (): AppState => ({
   profiles: [],
   clients: [],
   projects: [],
+  tasks: [],
   timeEntries: [],
   invoices: [],
 });
