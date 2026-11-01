@@ -101,12 +101,19 @@ export function mapProject(row: Record<string, unknown>): Project {
 }
 
 export function mapTask(row: Record<string, unknown>): Task {
+  const status = String(row.status ?? "");
   return {
     id: String(row.id),
     userId: String(row.user_id),
     projectId: String(row.project_id),
     title: String(row.title ?? ""),
-    done: Boolean(row.done),
+    status:
+      status === "in_progress" || status === "completed" || status === "todo"
+        ? status
+        : row.done
+          ? "completed"
+          : "todo",
+    dueDate: row.due_date ? String(row.due_date).slice(0, 10) : null,
     createdAt: String(row.created_at),
   };
 }
@@ -117,6 +124,7 @@ export function mapEntry(row: Record<string, unknown>): TimeEntry {
     userId: String(row.user_id),
     projectId: String(row.project_id),
     clientId: String(row.client_id),
+    taskId: row.task_id ? String(row.task_id) : null,
     description: String(row.description ?? ""),
     startTime: String(row.start_time),
     endTime: row.end_time ? String(row.end_time) : null,
@@ -245,7 +253,9 @@ export function taskRow(t: Task) {
     user_id: t.userId,
     project_id: t.projectId,
     title: t.title,
-    done: t.done,
+    done: t.status === "completed",
+    status: t.status,
+    due_date: t.dueDate || null,
     created_at: t.createdAt,
   };
 }
@@ -256,6 +266,7 @@ export function entryRow(e: TimeEntry) {
     user_id: e.userId,
     project_id: e.projectId,
     client_id: e.clientId,
+    ...(e.taskId ? { task_id: e.taskId } : {}),
     description: e.description,
     start_time: e.startTime,
     end_time: e.endTime,

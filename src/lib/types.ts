@@ -84,12 +84,15 @@ export type Project = {
   createdAt: string;
 };
 
+export type TaskStatus = "todo" | "in_progress" | "completed";
+
 export type Task = {
   id: string;
   userId: string;
   projectId: string;
   title: string;
-  done: boolean;
+  status: TaskStatus;
+  dueDate: string | null;
   createdAt: string;
 };
 
@@ -98,6 +101,7 @@ export type TimeEntry = {
   userId: string;
   projectId: string;
   clientId: string;
+  taskId: string | null;
   description: string;
   startTime: string;
   endTime: string | null;

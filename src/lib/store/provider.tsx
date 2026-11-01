@@ -39,6 +39,7 @@ import {
   loadState,
   nextInvoiceNumber,
   normalizeProfile,
+  normalizeTask,
   nowIso,
   projectRateOrDefault,
   recalcInvoice,
@@ -115,13 +116,17 @@ type Store = {
   updateProject: (id: string, patch: Partial<Project>) => Promise<void>;
   archiveProject: (id: string) => Promise<void>;
   deleteProject: (id: string) => Promise<void>;
-  createTask: (input: { title: string; projectId: string }) => Promise<Task>;
-  setTaskDone: (id: string, done: boolean) => Promise<void>;
+  createTask: (input: { title: string; projectId: string; dueDate?: string | null }) => Promise<Task>;
+  updateTask: (
+    id: string,
+    patch: Partial<Pick<Task, "title" | "projectId" | "dueDate" | "status">>,
+  ) => Promise<void>;
   deleteTask: (id: string) => Promise<void>;
   startTimer: (input: {
     projectId: string;
     description: string;
     billable: boolean;
+    taskId?: string | null;
   }) => Promise<void>;
   pauseTimer: () => Promise<void>;
   resumeTimer: () => Promise<void>;
@@ -156,7 +161,7 @@ function userSlice(state: AppState, userId: string) {
     profile: profile ? normalizeProfile(profile) : null,
     clients: state.clients.filter((c) => c.userId === userId),
     projects: state.projects.filter((p) => p.userId === userId),
-    tasks: state.tasks.filter((t) => t.userId === userId),
+    tasks: state.tasks.filter((t) => t.userId === userId).map((task) => normalizeTask(task)),
     timeEntries: state.timeEntries.filter((e) => e.userId === userId),
     invoices: state.invoices.filter((i) => i.userId === userId),
   };
@@ -640,7 +645,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const createTask = async (input: { title: string; projectId: string }) => {
+  const createTask = async (input: { title: string; projectId: string; dueDate?: string | null }) => {
     const u = requireUser();
     const title = input.title.trim();
     if (!title) throw new Error("Enter a task name.");
@@ -653,7 +658,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       userId: u.id,
       projectId: project.id,
       title,
-      done: false,
+      status: "todo",
+      dueDate: input.dueDate || null,
       createdAt: nowIso(),
     };
     persist((s) => ({ ...s, tasks: [task, ...s.tasks] }));
@@ -664,13 +670,35 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     return task;
   };
 
-  const setTaskDone = async (id: string, done: boolean) => {
+  const updateTask = async (
+    id: string,
+    patch: Partial<Pick<Task, "title" | "projectId" | "dueDate" | "status">>,
+  ) => {
+    const u = requireUser();
+    if (patch.projectId) {
+      const project = stateRef.current.projects.find(
+        (p) => p.id === patch.projectId && p.userId === u.id,
+      );
+      if (!project) throw new Error("Select a project for this task.");
+    }
+    if (patch.title !== undefined && !patch.title.trim()) throw new Error("Enter a task name.");
     persist((s) => ({
       ...s,
-      tasks: s.tasks.map((t) => (t.id === id ? { ...t, done } : t)),
+      tasks: s.tasks.map((t) =>
+        t.id === id
+          ? {
+              ...t,
+              ...patch,
+              title: patch.title !== undefined ? patch.title.trim() : t.title,
+              dueDate: patch.dueDate === undefined ? t.dueDate : patch.dueDate || null,
+            }
+          : t,
+      ),
     }));
     if (usingSupabase) {
-      const { error } = await sb().from("tasks").update({ done }).eq("id", id);
+      const task = stateRef.current.tasks.find((t) => t.id === id);
+      if (!task) return;
+      const { error } = await sb().from("tasks").update(taskRow(task)).eq("id", id);
       if (error) throw error;
     }
   };
@@ -687,6 +715,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     projectId: string;
     description: string;
     billable: boolean;
+    taskId?: string | null;
   }) => {
     const u = requireUser();
     const existing = state.timeEntries.find(
@@ -703,6 +732,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       userId: u.id,
       projectId: project.id,
       clientId: project.clientId,
+      taskId: input.taskId ?? null,
       description: input.description.trim(),
       startTime: nowIso(),
       endTime: null,
@@ -713,10 +743,23 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       status: "running",
       createdAt: nowIso(),
     };
-    persist((s) => ({ ...s, timeEntries: [entry, ...s.timeEntries] }));
+    persist((s) => ({
+      ...s,
+      timeEntries: [entry, ...s.timeEntries],
+      tasks: input.taskId
+        ? s.tasks.map((t) => (t.id === input.taskId ? { ...t, status: "in_progress" } : t))
+        : s.tasks,
+    }));
     if (usingSupabase) {
       const { error } = await sb().from("time_entries").insert(entryRow(entry));
       if (error) throw error;
+      if (input.taskId) {
+        const task = stateRef.current.tasks.find((t) => t.id === input.taskId);
+        if (task) {
+          const taskError = (await sb().from("tasks").update(taskRow(task)).eq("id", task.id)).error;
+          if (taskError) throw taskError;
+        }
+      }
     }
   };
 
@@ -949,7 +992,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     archiveProject,
     deleteProject,
     createTask,
-    setTaskDone,
+    updateTask,
     deleteTask,
     startTimer,
     pauseTimer,

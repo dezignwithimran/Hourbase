@@ -117,8 +117,14 @@ create table if not exists public.tasks (
   project_id uuid not null references public.projects (id) on delete cascade,
   title text not null,
   done boolean not null default false,
+  status text not null default 'todo' check (status in ('todo', 'in_progress', 'completed')),
+  due_date date,
   created_at timestamptz not null default now()
 );
+
+alter table public.tasks add column if not exists due_date date;
+alter table public.tasks add column if not exists status text not null default 'todo';
+alter table public.time_entries add column if not exists task_id uuid references public.tasks (id) on delete set null;
 
 alter table public.profiles enable row level security;
 alter table public.clients enable row level security;

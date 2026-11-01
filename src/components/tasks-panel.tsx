@@ -10,7 +10,7 @@ import Link from "next/link";
 import { useState } from "react";
 
 export function TasksPanel({ projectId }: { projectId?: string }) {
-  const { projects, tasks, createTask, setTaskDone, deleteTask } = useStore();
+  const { projects, tasks, createTask, updateTask, deleteTask } = useStore();
   const [title, setTitle] = useState("");
   const [selectedProject, setSelectedProject] = useState(projectId ?? "");
   const [busy, setBusy] = useState(false);
@@ -86,24 +86,26 @@ export function TasksPanel({ projectId }: { projectId?: string }) {
               <li key={task.id} className="flex items-center gap-3 px-4 py-3">
                 <button
                   type="button"
-                  aria-label={task.done ? "Mark task open" : "Mark task done"}
+                  aria-label={task.status === "completed" ? "Mark task open" : "Mark task done"}
                   onClick={() =>
-                    setTaskDone(task.id, !task.done).catch((err) =>
+                    updateTask(task.id, {
+                      status: task.status === "completed" ? "todo" : "completed",
+                    }).catch((err) =>
                       toast(err instanceof Error ? err.message : "Could not update task", "error"),
                     )
                   }
                   className={
-                    task.done
+                    task.status === "completed"
                       ? "flex h-5 w-5 shrink-0 items-center justify-center rounded-md bg-primary text-white"
                       : "h-5 w-5 shrink-0 rounded-md border border-border-strong"
                   }
                 >
-                  {task.done ? <Check className="h-3.5 w-3.5" /> : null}
+                  {task.status === "completed" ? <Check className="h-3.5 w-3.5" /> : null}
                 </button>
                 <div className="min-w-0 flex-1">
                   <p
                     className={
-                      task.done
+                      task.status === "completed"
                         ? "truncate text-sm text-text-secondary line-through"
                         : "truncate text-sm font-medium text-text"
                     }

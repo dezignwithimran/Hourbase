@@ -11,6 +11,7 @@ import type {
   ProjectStatus,
   SessionUser,
   Task,
+  TaskStatus,
   SupportTicket,
   TeamMember,
   TimeEntry,
@@ -92,6 +93,23 @@ export function loadState(): AppState {
   }
 }
 
+export function normalizeTask(task: Task & { done?: boolean; status?: TaskStatus }): Task {
+  const status: TaskStatus =
+    task.status === "todo" || task.status === "in_progress" || task.status === "completed"
+      ? task.status
+      : task.done
+        ? "completed"
+        : "todo";
+  return {
+    id: task.id,
+    userId: task.userId,
+    projectId: task.projectId,
+    title: task.title,
+    status,
+    dueDate: task.dueDate || null,
+    createdAt: task.createdAt,
+  };
+}
 export function clientLabel(
   project: Pick<Project, "clientId" | "clientName">,
   clients: Client[],
@@ -302,6 +320,7 @@ export function buildManualEntry(input: {
     billable: input.billable,
     hourlyRate: input.project.hourlyRate,
     earnings: earningsFromDuration(input.billable, duration, input.project.hourlyRate),
+    taskId: null,
     status: "completed",
     createdAt: nowIso(),
   };
