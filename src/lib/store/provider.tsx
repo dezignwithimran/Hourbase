@@ -60,6 +60,14 @@ import { toast } from "@/components/ui/toast";
 
 export { applyAppearance } from "@/lib/appearance";
 
+function friendlyAuthError(message: string) {
+  const text = message.toLowerCase();
+  if (text.includes("rate limit")) {
+    return "Too many confirmation emails were sent. Wait about an hour, then try again.";
+  }
+  return message;
+}
+
 type ManualEntryInput = {
   date: string;
   startTime: string;
@@ -266,14 +274,43 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     const normalized = email.trim().toLowerCase();
     if (usingSupabase) {
       const supabase = sb();
-      const { data, error } = await supabase.auth.signUp({
-        email: normalized,
-        password,
-        options: { data: { name } },
+      const response = await fetch("/api/auth/signup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: name.trim(), email: normalized, password }),
       });
-      if (error) throw error;
-      if (!data.user) throw new Error("Check your email to confirm the account.");
-      const session = { id: data.user.id, email: normalized };
+      const body = (await response.json().catch(() => null)) as {
+        error?: string;
+        existing?: boolean;
+      } | null;
+      let userId = "";
+      if (response.ok) {
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email: normalized,
+          password,
+        });
+        if (error) {
+          throw new Error(
+            body?.existing
+              ? "An account with this email already exists. Log in instead."
+              : friendlyAuthError(error.message),
+          );
+        }
+        if (!data.user) throw new Error("Unable to sign in.");
+        userId = data.user.id;
+      } else if (response.status !== 500) {
+        throw new Error(friendlyAuthError(body?.error || "Could not create the account."));
+      } else {
+        const { data, error } = await supabase.auth.signUp({
+          email: normalized,
+          password,
+          options: { data: { name } },
+        });
+        if (error) throw new Error(friendlyAuthError(error.message));
+        if (!data.user) throw new Error("Check your email to confirm the account.");
+        userId = data.user.id;
+      }
+      const session = { id: userId, email: normalized };
       setUser(session);
       const p = defaultProfile(session.id, name.trim(), normalized);
       persist({ ...emptyState(), profiles: [p] });
