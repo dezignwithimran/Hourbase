@@ -9,6 +9,9 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
+const invalidField =
+  "border-danger bg-danger-soft text-danger hover:border-danger focus:border-danger focus:bg-danger-soft focus:ring-danger/15";
+
 export default function LoginPage() {
   const { login, usingSupabase } = useStore();
   const router = useRouter();
@@ -16,9 +19,29 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [remember, setRemember] = useState(true);
   const [busy, setBusy] = useState(false);
+  const [attempted, setAttempted] = useState(false);
+  const [touched, setTouched] = useState({ email: false, password: false });
+
+  const emailEmpty = email.trim().length === 0;
+  const passwordEmpty = password.length === 0;
+  const passwordTooShort = password.length > 0 && password.length < 8;
+  const emailInvalid = emailEmpty && (attempted || touched.email);
+  const passwordInvalid =
+    (passwordEmpty && (attempted || touched.password)) || passwordTooShort;
+  const passwordError = passwordEmpty
+    ? "Enter a password."
+    : passwordTooShort
+      ? "At least 8 characters."
+      : undefined;
+
+  function markTouched(field: "email" | "password") {
+    setTouched((current) => ({ ...current, [field]: true }));
+  }
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
+    setAttempted(true);
+    if (emailEmpty || passwordEmpty || passwordTooShort) return;
     setBusy(true);
     try {
       await login(email, password);
@@ -34,22 +57,29 @@ export default function LoginPage() {
   return (
     <GuestOnly>
       <AuthCard title="Welcome back" subtitle="Log in to pick up where your timer left off.">
-        <form onSubmit={onSubmit} className="space-y-4">
-          <Field label="Email">
+        <form noValidate onSubmit={onSubmit} className="space-y-4">
+          <Field label="Email" error={emailInvalid ? "Enter your email." : undefined}>
             <Input
               type="email"
               placeholder="you@studio.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+              onBlur={() => markTouched("email")}
               required
+              aria-invalid={emailInvalid}
+              className={emailInvalid ? invalidField : undefined}
             />
           </Field>
-          <Field label="Password">
+          <Field label="Password" error={passwordInvalid ? passwordError : undefined}>
             <PasswordInput
               placeholder="••••••••"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              onBlur={() => markTouched("password")}
               required
+              minLength={8}
+              aria-invalid={passwordInvalid}
+              className={passwordInvalid ? invalidField : undefined}
             />
           </Field>
           <div className="flex items-center justify-between text-sm">
