@@ -413,6 +413,12 @@ html:has(.marketing-site) {
   }
 }
 
+vercel-live-feedback,
+#vercel-toolbar,
+[data-vercel-toolbar] {
+  display: none !important;
+}
+
 @media (prefers-reduced-motion: reduce) {
   html:has(.marketing-site) {
     scroll-behavior: auto;
